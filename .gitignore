@@ -1,0 +1,9 @@
+# venv
+.venv
+.env
+venv
+.venv_img_txt
+
+# Python cache
+__pycache__/
+*.py[cod]

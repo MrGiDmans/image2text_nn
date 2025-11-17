@@ -1,7 +1,6 @@
-# Описание налбора данных Flickr8k-Images-Captions
-Ссылка на оригинальный датасет [здесь]{https://www.kaggle.com/datasets/aladdinpersson/flickr8kimagescaptions?resource=download}
+# Description of the Flickr8k-Images-Captions dataset
+Link to the original dataset [here](https://www.kaggle.com/datasets/aladdinpersson/flickr8kimagescaptions?resource=download)
 
-Важный факт изображения представленные в датасете имеют размеры 500 на 500 максимум на каждую сторону.
-Это поможет при написании класса Dataset
+An important fact is that the images presented in the dataset have a maximum size of 500 by 500 on each side.
 
-Настоятельно рекомендую изменить формат файла "captions" с "txt" на "csv".
+I strongly recommend changing the "captions" file format from "txt" to "csv".

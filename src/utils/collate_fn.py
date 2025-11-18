@@ -1,5 +1,5 @@
 import torch
-from src.utils.vocabulary import Vocabulary
+from utils.vocabulary import Vocabulary
 
 def collate_fn_for_token(batch, vocab: Vocabulary):
     images = []

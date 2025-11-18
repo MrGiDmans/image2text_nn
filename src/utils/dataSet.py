@@ -1,4 +1,5 @@
 import os
+from typing import List
 import pandas as pd
 from PIL import Image
 from torch.utils.data import Dataset
@@ -27,6 +28,7 @@ class Flickr8kDataset(Dataset):
 
     def __len__(self):
         return len(self.df)
+
     
     def __getitem__(self, idx):
         """
@@ -54,3 +56,12 @@ class Flickr8kDataset(Dataset):
             image = self.transform(image)
 
         return image, caption
+
+    @staticmethod
+    def get_all_captions(caption_file: str) -> List[str]:
+        """Статический метод для загрузки всех подписей из файла."""
+
+        import pandas as pd
+        df = pd.read_csv(caption_file) 
+        
+        return df['caption'].tolist()

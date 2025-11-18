@@ -1,12 +1,13 @@
 import torch.nn as nn
 import torchvision.models as models
+from torch import Tensor
 
 class EncoderCNN(nn.Module):
     def __init__(self, encoded_image_size=14, embed_dim=512, fine_tune=False):
         """
-        encoded_image_size: размер карты признаков (для attention, если нужно)
-        embed_dim: размер выходного вектора признаков
-        fine_tune: разрешить/запретить обучение conv-слоёв
+        encoded_image_size: the size of the feature map (for attention, if necessary)
+        embed_dim: size of the output feature vector
+        fine_tune: allow/prohibit training of conv layers
         """
         super().__init__()
         self.enc_image_size = encoded_image_size
@@ -26,14 +27,14 @@ class EncoderCNN(nn.Module):
         self.relu = nn.ReLU(inplace=True)
         self.fine_tune(fine_tune)
 
-    def forward(self, images):
+    def forward(self, images: Tensor) -> tuple[Tensor, Tensor]:
         """
-        images: FloatTensor [B, 3, H, W] (предварительно нормализованные)
-        возвращает:
-         - features: [B, num_pixels, embed_dim] где num_pixels = enc_image_size**2
+        images: FloatTensor [B, 3, H, W] (pre-normalized)
+        returns:
+         - features: [B, num_pixels, embed_dim] where num_pixels = self.enc_image_size**2
          - global_features: [B, embed_dim] (mean-pooled)
         """
-        x = self.backbone(images)                    # [B, 2048, H', W']
+        x: Tensor = self.backbone(images)            # [B, 2048, H', W']
         x = self.adaptive_pool(x)                    # [B, 2048, enc_image_size, enc_image_size]
         x = self.conv(x)                             # [B, embed_dim, enc_image_size, enc_image_size]
         x = self.relu(x)

@@ -61,7 +61,7 @@ class Vocabulary:
     def decode_indexes(self, idxs):
         return [self.idx_to_word.get(int(i), self.unk_token) for i in idxs]
 
-    def save(self, path: str):
+    def save_vocab(self, path: str):
         payload = {
             "word_to_idx": self.word_to_idx,
             "freq_threshold": self.freq_threshold

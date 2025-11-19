@@ -37,7 +37,7 @@ class DecoderRNN(nn.Module):
         c: Tensor = self.init_c(encoder_feats)
         return h.unsqueeze(0), c.unsqueeze(0)
 
-    def forward(self, encoder_feats, captions, lengths):
+    def forward(self, encoder_feats: Tensor, captions: Tensor, lengths: Tensor):
         embeddings = self.embedding(captions)
 
         B, T, _ = embeddings.size()
@@ -62,7 +62,7 @@ class DecoderRNN(nn.Module):
         return self.fc(self.dropout(out))  # [B, Tmax, vocab]
 
     @torch.no_grad()
-    def beam_search(self, encoder_feat, vocab: Vocabulary,
+    def beam_search(self, encoder_feat: Tensor, vocab: Vocabulary,
                     beam_size=3, max_len=20, device='cpu'):
 
         bos = vocab.bos_idx

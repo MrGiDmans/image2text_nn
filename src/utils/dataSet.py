@@ -11,19 +11,19 @@ class Flickr8kDataset(Dataset):
     представляет собой пару (изображение, одно описание).
     В самом файле captions.csv для каждого изображения имеется по 5 описаний.
     """
-    def __init__(self, root_dir, caption_file, transform=None):
+    def __init__(self, images_dir, caption_file, transform=None):
         """
         Инициализация набора данных.
         
         Args:
-            root_dir (str): Путь к директории, содержащей изображения.
+            images_dir (str): Путь к директории, содержащей изображения.
             caption_file (str): Путь к CSV/TXT файлу с описаниями (image, caption).
             transform (callable, optional): Необязательное преобразование, 
                                             применяемое к изображению.
         """
         self.df = pd.read_csv(caption_file, sep=",", quotechar='"')
 
-        self.root_dir = root_dir
+        self.images_dir = images_dir
         self.transform = transform
 
     def __len__(self):
@@ -45,7 +45,7 @@ class Flickr8kDataset(Dataset):
         img_name = row["image"]
         caption  = str(row["caption"])
 
-        img_path = os.path.join(self.root_dir, img_name)
+        img_path = os.path.join(self.images_dir, img_name)
 
         try:
             image = Image.open(img_path).convert("RGB")

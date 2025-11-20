@@ -1,6 +1,10 @@
 import torch
 from utils.vocabulary import Vocabulary
 
+def collate_fn_with_vocab(batch, vocab):
+    return collate_fn_for_token(batch, vocab)
+
+
 def collate_fn_for_token(batch, vocab: Vocabulary):
     images = []
     captions = []

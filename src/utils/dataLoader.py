@@ -3,9 +3,11 @@ from torch.utils.data import DataLoader, Subset, Dataset
 from sklearn.model_selection import train_test_split
 import os
 import sys
+from functools import partial
+import platform
 
 from utils.transforms import create_training_transforms
-from utils.collate_fn import collate_fn_for_token
+from utils.collate_fn import collate_fn_for_token, collate_fn_with_vocab
 from utils.vocabulary import Vocabulary
 
 
@@ -122,13 +124,22 @@ class CaptioningDataPipeline:
         train_dataset = Subset(dataset, train_idx)
         val_dataset = Subset(dataset, val_idx)
         
-        collate_fn_final = lambda batch: collate_fn_for_token(batch, self.vocab)
+        # collate_fn_final = lambda batch: collate_fn_for_token(batch, self.vocab)
+
+        # --- Универсальный collate_fn через partial (работает везде)
+        collate_fn_final = partial(collate_fn_with_vocab, vocab=self.vocab)
+
+        # --- Автоматическая корректировка num_workers под Windows
+        num_workers = cfg.num_workers
+        if platform.system().lower().startswith("win") and cfg.num_workers > 0:
+            print("⚠️ Windows detected → forcing num_workers = 0 due to spawn multiprocessing.")
+            num_workers = 0
         
         train_loader = DataLoader(
             train_dataset,
             batch_size=cfg.batch_size,
             shuffle=True,
-            num_workers=cfg.num_workers,
+            num_workers=num_workers,
             collate_fn=collate_fn_final
         )
 
@@ -136,7 +147,7 @@ class CaptioningDataPipeline:
             val_dataset,
             batch_size=cfg.batch_size,
             shuffle=False,
-            num_workers=cfg.num_workers,
+            num_workers=num_workers,
             collate_fn=collate_fn_final
         )
         

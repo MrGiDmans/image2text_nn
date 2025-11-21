@@ -3,16 +3,17 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from pathlib import Path
-from tqdm import tqdm # Для красивого отображения прогресса
+from tqdm import tqdm
+from typing import Optional, Dict, Any
 
-# Импорты ваших модулей
+# Мои импорты
 from utils.dataSet import Flickr8kDataset
 from utils.dataLoader import DataLoaderConfig, CaptioningDataPipeline
 from models import EncoderCNN, DecoderRNN, CaptioningModel
 
 # Глобальные настройки
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-NUM_EPOCHS = 5 # Количество эпох обучения
+NUM_EPOCHS = 100 # Количество эпох обучения
 LEARNING_RATE = 1e-4
 
 @torch.no_grad()
@@ -46,26 +47,52 @@ def validate_model(model, loader, criterion, device):
     
     return avg_loss
 
-def save_checkpoint(model, optimizer, epoch, loss, path="checkpoint.pth.tar", is_best=False):
+def save_checkpoint(
+    model: torch.nn.Module, 
+    optimizer: torch.optim.Optimizer, 
+    epoch: int, 
+    loss: float, 
+    save_dir: Path,  # Принимаем директорию, а не полный путь к файлу
+    is_best: bool, 
+    best_loss_so_far: Optional[float] = None
+):
     """
     Сохраняет контрольную точку (чекпоинт) модели.
-    """
+    Сохраняет только LAST (последний) и BEST (лучший) чекпоинты.
     
-    # 1. Сбор состояния
-    state = {
+    Args:
+        model: Модель PyTorch.
+        optimizer: Оптимизатор PyTorch.
+        epoch: Номер текущей эпохи.
+        loss: Текущая валидационная потеря (loss).
+        save_dir: Директория для сохранения файлов.
+        is_best: Флаг, указывающий, является ли текущая модель лучшей.
+        best_loss_so_far: Лучшая потеря, достигнутая до сих пор.
+    """
+    # 1. Сбор состояния (включаем лучшую потерю для удобства при возобновлении)
+    state: Dict[str, Any] = {
         'epoch': epoch,
         'model_state_dict': model.state_dict(),
         'optimizer_state_dict': optimizer.state_dict(),
-        'best_loss': loss
+        'val_loss': loss,
+        'best_val_loss': best_loss_so_far if best_loss_so_far is not None else loss
     }
     
-    # 2. Сохранение
-    torch.save(state, path)
-    print(f"Checkpoint сохранен в {path} (Epoch {epoch}, Loss: {loss:.4f})")
-    
-    # 3. Дополнительно: Сохранение лучшей модели
-    if is_best: # Если это лучший результат на валидации
-        torch.save(state, 'BEST_' + path)
+    # Убедимся, что директория существует
+    save_dir.mkdir(parents=True, exist_ok=True)
+
+    # --- 2. Сохранение LAST (последней) модели ---
+    last_path = save_dir / "last_checkpoint.pth.tar"
+    torch.save(state, last_path)
+    print(f"✅ LAST Checkpoint сохранен в {last_path.name} (Epoch {epoch}, Loss: {loss:.4f})")
+
+    # --- 3. Сохранение BEST (лучшей) модели ---
+    if is_best:
+        best_path = save_dir / "best_checkpoint.pth.tar"
+        # Сохраняем то же состояние, но под другим именем
+        torch.save(state, best_path)
+        print(f"⭐ Лучший Checkpoint сохранен в {best_path.name}")
+
 
 def train_epoch(model, loader, criterion, optimizer, device, vocab):
     model.train()
@@ -144,7 +171,7 @@ def main(images_dir, caption_file, vocab_path):
 
     encoder = EncoderCNN(embed_dim=ENCODER_DIM, fine_tune=False)
     decoder = DecoderRNN(
-        vocab_size=len(vocab), 
+        vocab_size=len(vocab),  
         embed_size=EMBED_SIZE, 
         decoder_dim=DECODER_DIM, 
         encoder_dim=ENCODER_DIM, 

@@ -17,3 +17,4 @@ data/
 
 .\checkpoints\best_checkpoint.pth.tar
 .\checkpoints\last_checkpoint.pth.tar
+checkpoints/*.pth.tar

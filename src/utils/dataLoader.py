@@ -1,12 +1,15 @@
 from typing import Tuple, Type
 from torch.utils.data import DataLoader, Subset, Dataset
 from sklearn.model_selection import train_test_split
-import os
-import sys
 from functools import partial
+import os
 import platform
+import torch
 
-from utils.transforms import create_training_transforms
+from utils.transforms import (
+    create_training_transforms,
+    create_validation_transforms,
+)
 from utils.collate_fn import collate_fn_for_token, collate_fn_with_vocab
 from utils.vocabulary import Vocabulary
 
@@ -57,6 +60,7 @@ class DataLoaderConfig:
         num_workers: int = 4,
         val_split: float = 0.2,
         random_state: int = 42,
+        pin_memory: bool = True,
     ):
         self.dataset_cls = dataset_cls
         self.images_dir = images_dir
@@ -68,6 +72,7 @@ class DataLoaderConfig:
         self.num_workers = num_workers
         self.val_split = val_split
         self.random_state = random_state
+        self.pin_memory = pin_memory
 
 class CaptioningDataPipeline:
     """
@@ -110,19 +115,32 @@ class CaptioningDataPipeline:
             
         cfg = self.config
         
-        train_transform = create_training_transforms(image_size=cfg.image_size, resize_size=256)
-        
-        dataset = cfg.dataset_cls(cfg.images_dir, cfg.caption_file, transform=train_transform)
+        train_transform = create_training_transforms(
+            image_size=cfg.image_size, resize_size=256
+        )
+        val_transform = create_validation_transforms(
+            image_size=cfg.image_size, resize_size=256
+        )
 
-        indices = list(range(len(dataset)))
+        # отдельные датасеты под разные аугментации
+        dataset_for_split = cfg.dataset_cls(
+            cfg.images_dir, cfg.caption_file, transform=None
+        )
+        indices = list(range(len(dataset_for_split)))
         train_idx, val_idx = train_test_split(
             indices, 
             test_size=cfg.val_split, 
             random_state=cfg.random_state
         )
 
-        train_dataset = Subset(dataset, train_idx)
-        val_dataset = Subset(dataset, val_idx)
+        train_dataset = Subset(
+            cfg.dataset_cls(cfg.images_dir, cfg.caption_file, transform=train_transform),
+            train_idx,
+        )
+        val_dataset = Subset(
+            cfg.dataset_cls(cfg.images_dir, cfg.caption_file, transform=val_transform),
+            val_idx,
+        )
         
         # collate_fn_final = lambda batch: collate_fn_for_token(batch, self.vocab)
 
@@ -135,12 +153,15 @@ class CaptioningDataPipeline:
             print("⚠️ Windows detected → forcing num_workers = 0 due to spawn multiprocessing.")
             num_workers = 0
         
+        pin_memory = cfg.pin_memory and torch.cuda.is_available()
+
         train_loader = DataLoader(
             train_dataset,
             batch_size=cfg.batch_size,
             shuffle=True,
             num_workers=num_workers,
-            collate_fn=collate_fn_final
+            pin_memory=pin_memory,
+            collate_fn=collate_fn_final,
         )
 
         val_loader = DataLoader(
@@ -148,7 +169,8 @@ class CaptioningDataPipeline:
             batch_size=cfg.batch_size,
             shuffle=False,
             num_workers=num_workers,
-            collate_fn=collate_fn_final
+            pin_memory=pin_memory,
+            collate_fn=collate_fn_final,
         )
         
         return train_loader, val_loader

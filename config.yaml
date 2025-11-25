@@ -1,0 +1,58 @@
+# config.yaml — основной конфиг для обучения
+device: "cuda"
+seed: 42
+
+data:
+  images_dir: "./data/flickr8k/images"
+  caption_file: "./data/flickr8k/captions.csv"
+  vocab_path: "./vocab.pkl"
+  image_size: 224
+  batch_size: 32
+  num_workers: 4
+  val_split: 0.2
+  freq_threshold: 5
+
+model:
+  embed_size: 512
+  decoder_dim: 512
+  encoder_dim: 512
+  dropout: 0.5
+  encoder_fine_tune: false
+  encoded_image_size: 14
+
+training:
+  epochs: 50
+  lr: 1e-4
+  lr_mode: "continue"   # continue | finetune
+  finetune_lr: 1e-5
+  grad_clip: 5.0
+  use_amp: true
+  save_every_epoch: false
+  checkpoint_dir: "./checkpoints"
+  resume_from: null  # path or null
+
+scheduler:
+  type: "ReduceLROnPlateau"
+  factor: 0.5
+  patience: 2
+  min_lr: 1e-7
+
+early_stopping:
+  enabled: true
+  patience: 5
+  min_delta: 1e-4
+  track_overfitting: true
+  overfitting_gap_threshold: 0.5
+  overfitting_patience: 3
+
+logging:
+  tensorboard: true
+  tensorboard_dir: "./runs"
+  use_wandb: false
+  wandb:
+    project: "image-captioning"
+    entity: tumambae  # optional
+
+metrics:
+  bleu: true
+  use_sacrebleu_if_available: true

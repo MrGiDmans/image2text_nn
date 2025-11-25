@@ -43,6 +43,16 @@ class EncoderCNN(nn.Module):
         global_feat = features.mean(dim=1)               # [B, embed_dim]
         return features, global_feat
 
-    def fine_tune(self, fine_tune=False):
+    def fine_tune(self, fine_tune: bool = False, trainable_blocks: int = 2) -> None:
+        """
+        Размораживаем только последние `trainable_blocks` резнет-блока, чтобы
+        избежать «забывания» базовых признаков.
+        """
         for p in self.backbone.parameters():
-            p.requires_grad = fine_tune
+            p.requires_grad = False
+
+        if fine_tune:
+            blocks = list(self.backbone.children())
+            for block in blocks[-trainable_blocks:]:
+                for p in block.parameters():
+                    p.requires_grad = True

@@ -10,7 +10,7 @@ from utils.transforms import (
     create_training_transforms,
     create_validation_transforms,
 )
-from utils.collate_fn import collate_fn_for_token, collate_fn_with_vocab
+from utils.collate_fn import collate_fn_with_vocab
 from utils.vocabulary import Vocabulary
 
 

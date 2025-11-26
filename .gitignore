@@ -11,7 +11,7 @@ __pycache__/
 # data files
 data/
 *.csv
-*.pkl
+
 
 *.pth.tar
 
